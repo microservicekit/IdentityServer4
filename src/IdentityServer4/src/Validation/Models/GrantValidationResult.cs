@@ -76,7 +76,8 @@ namespace IdentityServer4.Validation
         /// </summary>
         /// <param name="subject">The subject claim used to uniquely identifier the user.</param>
         /// <param name="authenticationMethod">The authentication method which describes the custom grant type.</param>
-        /// <param name="claims">Additional claims that will be maintained in the principal.</param>
+        /// <param name="claims">Additional claims that will be maintained in the principal. 
+        /// If you want these claims to appear in token, you need to add them explicitly in your custom implementation of <see cref="Services.IProfileService"/> service.</param>
         /// <param name="identityProvider">The identity provider.</param>
         /// <param name="customResponse">The custom response.</param>
         public GrantValidationResult(
@@ -95,7 +96,8 @@ namespace IdentityServer4.Validation
         /// <param name="subject">The subject claim used to uniquely identifier the user.</param>
         /// <param name="authenticationMethod">The authentication method which describes the custom grant type.</param>
         /// <param name="authTime">The UTC date/time of authentication.</param>
-        /// <param name="claims">Additional claims that will be maintained in the principal.</param>
+        /// <param name="claims">Additional claims that will be maintained in the principal.
+        /// If you want these claims to appear in token, you need to add them explicitly in your custom implementation of <see cref="Services.IProfileService"/> service.</param>
         /// <param name="identityProvider">The identity provider.</param>
         /// <param name="customResponse">The custom response.</param>
         public GrantValidationResult(
@@ -113,7 +115,7 @@ namespace IdentityServer4.Validation
                 new Claim(JwtClaimTypes.Subject, subject),
                 new Claim(JwtClaimTypes.AuthenticationMethod, authenticationMethod),
                 new Claim(JwtClaimTypes.IdentityProvider, identityProvider),
-                new Claim(JwtClaimTypes.AuthenticationTime, new DateTimeOffset(authTime).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer)
+                new Claim(JwtClaimTypes.AuthenticationTime, new DateTimeOffset(authTime).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
             };
 
             if (!claims.IsNullOrEmpty())

@@ -1,11 +1,8 @@
 ﻿using Clients;
-using IdentityModel;
-using idunno.Authentication.Certificate;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json.Linq;
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Threading.Tasks;
 
 namespace SampleApi
@@ -14,10 +11,7 @@ namespace SampleApi
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services
-                .AddMvcCore()
-                .AddJsonFormatters()
-                .AddAuthorization();
+            services.AddControllers();
 
             services.AddCors();
             services.AddDistributedMemoryCache();
@@ -30,22 +24,38 @@ namespace SampleApi
 
                     options.ApiName = "api1";
                     options.ApiSecret = "secret";
-                })
-                .AddCertificate("x509", options =>
-                {
-                    options.RevocationMode = System.Security.Cryptography.X509Certificates.X509RevocationMode.NoCheck;
 
-                    options.Events = new CertificateAuthenticationEvents
+                    options.JwtBearerEvents = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
                     {
-                        OnValidateCertificate = context =>
+                        OnTokenValidated = e =>
                         {
-                            context.Principal = Principal.CreateFromCertificate(context.ClientCertificate, includeAllClaims: true);
-                            context.Success();
+                            var jwt = e.SecurityToken as JwtSecurityToken;
+                            var type = jwt.Header.Typ;
+
+                            if (!string.Equals(type, "at+jwt", StringComparison.Ordinal))
+                            {
+                                e.Fail("JWT is not an access token");
+                            }
 
                             return Task.CompletedTask;
                         }
                     };
                 });
+                //.AddCertificate("x509", options =>
+                //{
+                //    options.RevocationMode = System.Security.Cryptography.X509Certificates.X509RevocationMode.NoCheck;
+
+                //    options.Events = new CertificateAuthenticationEvents
+                //    {
+                //        OnValidateCertificate = context =>
+                //        {
+                //            context.Principal = Principal.CreateFromCertificate(context.ClientCertificate, includeAllClaims: true);
+                //            context.Success();
+
+                //            return Task.CompletedTask;
+                //        }
+                //    };
+                //});
         }
 
         public void Configure(IApplicationBuilder app)
@@ -61,47 +71,15 @@ namespace SampleApi
                 policy.WithExposedHeaders("WWW-Authenticate");
             });
 
+            app.UseRouting();
             app.UseAuthentication();
+            app.UseAuthorization();
+            //app.UseMiddleware<ConfirmationValidationMiddleware>();
 
-            app.Use(async (ctx, next) =>
+            app.UseEndpoints(endpoints =>
             {
-                if (ctx.User.Identity.IsAuthenticated)
-                {
-                    var cnfJson = ctx.User.FindFirst("cnf")?.Value;
-                    if (!String.IsNullOrWhiteSpace(cnfJson))
-                    {
-                        var certResult = await ctx.AuthenticateAsync("x509");
-                        if (!certResult.Succeeded)
-                        {
-                            await ctx.ChallengeAsync("x509");
-                            return;
-                        }
-
-                        var cert = ctx.Connection.ClientCertificate;
-                        if (cert == null)
-                        {
-                            await ctx.ChallengeAsync("x509");
-                            return;
-                        }
-
-                        var thumbprint = cert.Thumbprint;
-
-                        var cnf = JObject.Parse(cnfJson);
-                        var sha256 = cnf.Value<string>("x5t#S256");
-
-                        if (String.IsNullOrWhiteSpace(sha256) ||
-                            !thumbprint.Equals(sha256, StringComparison.OrdinalIgnoreCase))
-                        {
-                            await ctx.ChallengeAsync("token");
-                            return;
-                        }
-                    }
-                }
-
-                await next();
+                endpoints.MapControllers();
             });
-
-            app.UseMvc();
         }
     }
 }

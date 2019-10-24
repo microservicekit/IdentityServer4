@@ -9,6 +9,11 @@ IdentityServer Options
 * ``PublicOrigin``
     The origin of this server instance, e.g. https://myorigin.com. If not set, the origin name is inferred from the request.
 
+* ``AccessTokenJwtType``
+    Specifies the value used for the JWT typ header for access tokens (defaults to ``at+jwt``).
+* ``EmitLegacyResourceAudienceClaim``
+    Emits an ``aud`` claim with the format issuer/resources. That's needed for some older access token validation plumbing. Defaults to false.
+
 Endpoints
 ^^^^^^^^^
 Allows enabling/disabling individual endpoints, e.g. token, authorize, userinfo etc.
@@ -26,6 +31,9 @@ The ``CustomEntries`` dictionary allows adding custom elements to the discovery 
 
 Authentication
 ^^^^^^^^^^^^^^
+* ``CookieAuthenticationScheme``
+    Sets the cookie authenitcation scheme confgured by the host used for interactive users. If not set, the scheme will inferred from the host's default authentication scheme. This setting is typically used when AddPolicyScheme is used in the host as the default scheme.
+
 * ``CookieLifetime``
     The authentication cookie lifetime (only effective if the IdentityServer-provided cookie handler is used).
 

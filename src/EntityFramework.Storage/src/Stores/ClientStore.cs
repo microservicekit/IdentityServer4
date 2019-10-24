@@ -20,8 +20,15 @@ namespace IdentityServer4.EntityFramework.Stores
     /// <seealso cref="IdentityServer4.Stores.IClientStore" />
     public class ClientStore : IClientStore
     {
-        private readonly IConfigurationDbContext _context;
-        private readonly ILogger<ClientStore> _logger;
+        /// <summary>
+        /// The DbContext.
+        /// </summary>
+        protected readonly IConfigurationDbContext Context;
+
+        /// <summary>
+        /// The logger.
+        /// </summary>
+        protected readonly ILogger<ClientStore> Logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClientStore"/> class.
@@ -31,8 +38,8 @@ namespace IdentityServer4.EntityFramework.Stores
         /// <exception cref="ArgumentNullException">context</exception>
         public ClientStore(IConfigurationDbContext context, ILogger<ClientStore> logger)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _logger = logger;
+            Context = context ?? throw new ArgumentNullException(nameof(context));
+            Logger = logger;
         }
 
         /// <summary>
@@ -42,23 +49,28 @@ namespace IdentityServer4.EntityFramework.Stores
         /// <returns>
         /// The client
         /// </returns>
-        public Task<Client> FindClientByIdAsync(string clientId)
+        public virtual Task<Client> FindClientByIdAsync(string clientId)
         {
-            var client = _context.Clients
-                .Include(x => x.AllowedGrantTypes)
-                .Include(x => x.RedirectUris)
-                .Include(x => x.PostLogoutRedirectUris)
-                .Include(x => x.AllowedScopes)
-                .Include(x => x.ClientSecrets)
-                .Include(x => x.Claims)
-                .Include(x => x.IdentityProviderRestrictions)
-                .Include(x => x.AllowedCorsOrigins)
-                .Include(x => x.Properties)
-                .AsNoTracking()
-                .FirstOrDefault(x => x.ClientId == clientId);
-            var model = client?.ToModel();
+            IQueryable<Entities.Client> baseQuery = Context.Clients
+                .Where(x => x.ClientId == clientId)
+                .Take(1);
 
-            _logger.LogDebug("{clientId} found in database: {clientIdFound}", clientId, model != null);
+            var client = baseQuery.FirstOrDefault();
+            if (client == null) return Task.FromResult<Client>(null);
+
+            baseQuery.Include(x => x.AllowedCorsOrigins).SelectMany(c => c.AllowedCorsOrigins).Load();
+            baseQuery.Include(x => x.AllowedGrantTypes).SelectMany(c => c.AllowedGrantTypes).Load();
+            baseQuery.Include(x => x.AllowedScopes).SelectMany(c => c.AllowedScopes).Load();
+            baseQuery.Include(x => x.Claims).SelectMany(c => c.Claims).Load();
+            baseQuery.Include(x => x.ClientSecrets).SelectMany(c => c.ClientSecrets).Load();
+            baseQuery.Include(x => x.IdentityProviderRestrictions).SelectMany(c => c.IdentityProviderRestrictions).Load();
+            baseQuery.Include(x => x.PostLogoutRedirectUris).SelectMany(c => c.PostLogoutRedirectUris).Load();
+            baseQuery.Include(x => x.Properties).SelectMany(c => c.Properties).Load();
+            baseQuery.Include(x => x.RedirectUris).SelectMany(c => c.RedirectUris).Load();
+
+            var model = client.ToModel();
+
+            Logger.LogDebug("{clientId} found in database: {clientIdFound}", clientId, model != null);
 
             return Task.FromResult(model);
         }

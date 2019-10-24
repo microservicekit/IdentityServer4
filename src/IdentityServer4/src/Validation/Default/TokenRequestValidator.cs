@@ -415,6 +415,9 @@ namespace IdentityServer4.Validation
 
             if (resourceOwnerContext.Result.IsError)
             {
+                // protect against bad validator implementations
+                resourceOwnerContext.Result.Error = resourceOwnerContext.Result.Error ?? OidcConstants.TokenErrors.InvalidGrant;
+
                 if (resourceOwnerContext.Result.Error == OidcConstants.TokenErrors.UnsupportedGrantType)
                 {
                     LogError("Resource owner password credential grant type not supported");
@@ -430,7 +433,7 @@ namespace IdentityServer4.Validation
                     errorDescription = resourceOwnerContext.Result.ErrorDescription;
                 }
 
-                LogInformation("User authentication failed: {error}", errorDescription ?? resourceOwnerContext.Result.Error);
+                LogInformation("User authentication failed: ", errorDescription ?? resourceOwnerContext.Result.Error);
                 await RaiseFailedResourceOwnerAuthenticationEventAsync(userName, errorDescription, resourceOwnerContext.Request.Client.ClientId);
 
                 return Invalid(resourceOwnerContext.Result.Error, errorDescription, resourceOwnerContext.Result.CustomResponse);
