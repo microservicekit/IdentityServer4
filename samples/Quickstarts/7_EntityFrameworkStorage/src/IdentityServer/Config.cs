@@ -49,6 +49,7 @@ namespace IdentityServer
             {
                 new IdentityResources.OpenId(),
                 new IdentityResources.Profile(),
+                new IdentityResource("admin", "ceocio" ,new []{ClaimTypes.Role})
             };
         }
 
@@ -56,7 +57,7 @@ namespace IdentityServer
         {
             return new List<ApiResource>
             {
-                new ApiResource("api1", "My API")
+                new ApiResource("api1", "My API",new []{ClaimTypes.Role})
             };
         }
 
