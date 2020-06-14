@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using System.Net;
 using IdentityServer4.Services;
 using IdentityServer4.Events;
+using IdentityServer4.Extensions;
 
 namespace IdentityServer4.Endpoints
 {
@@ -65,7 +66,7 @@ namespace IdentityServer4.Endpoints
                 return new StatusCodeResult(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (!context.Request.HasFormContentType)
+            if (!context.Request.HasApplicationFormContentType())
             {
                 _logger.LogWarning("Invalid media type for introspection endpoint");
                 return new StatusCodeResult(HttpStatusCode.UnsupportedMediaType);

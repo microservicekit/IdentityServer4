@@ -15,8 +15,10 @@ namespace IdentityServer4.EntityFramework.Entities
         public string Name { get; set; }
         public string DisplayName { get; set; }
         public string Description { get; set; }
-        public List<ApiSecret> Secrets { get; set; }
-        public List<ApiScope> Scopes { get; set; }
+        public string AllowedAccessTokenSigningAlgorithms { get; set; }
+        public bool ShowInDiscoveryDocument { get; set; } = true;
+        public List<ApiResourceSecret> Secrets { get; set; }
+        public List<ApiResourceScope> Scopes { get; set; }
         public List<ApiResourceClaim> UserClaims { get; set; }
         public List<ApiResourceProperty> Properties { get; set; }
         public DateTime Created { get; set; } = DateTime.UtcNow;

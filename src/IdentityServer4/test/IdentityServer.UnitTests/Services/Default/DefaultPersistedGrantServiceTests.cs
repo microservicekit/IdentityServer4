@@ -2,20 +2,21 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
 
-using FluentAssertions;
-using IdentityServer4.Models;
-using IdentityServer4.Services;
-using IdentityServer4.Stores;
-using IdentityServer4.Stores.Serialization;
-using IdentityServer4.UnitTests.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using FluentAssertions;
+using IdentityServer.UnitTests.Common;
+using IdentityServer4;
+using IdentityServer4.Models;
+using IdentityServer4.Services;
+using IdentityServer4.Stores;
+using IdentityServer4.Stores.Serialization;
 using Xunit;
 
-namespace IdentityServer4.UnitTests.Services.Default
+namespace IdentityServer.UnitTests.Services.Default
 {
     public class DefaultPersistedGrantServiceTests
     {
@@ -391,6 +392,322 @@ namespace IdentityServer4.UnitTests.Services.Default
             (await _codes.GetAuthorizationCodeAsync(handle7)).Should().BeNull();
             (await _codes.GetAuthorizationCodeAsync(handle8)).Should().NotBeNull();
             (await _codes.GetAuthorizationCodeAsync(handle9)).Should().NotBeNull();
+        }
+        [Fact]
+        public async Task RemoveAllGrantsAsync_should_filter_on_session_id()
+        {
+            {
+                var handle1 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client1",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session1"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+                var handle2 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client2",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session1"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+                var handle3 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client3",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session3"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+
+                await _subject.RemoveAllGrantsAsync("123");
+
+                (await _refreshTokens.GetRefreshTokenAsync(handle1)).Should().BeNull();
+                (await _refreshTokens.GetRefreshTokenAsync(handle2)).Should().BeNull();
+                (await _refreshTokens.GetRefreshTokenAsync(handle3)).Should().BeNull();
+                await _refreshTokens.RemoveRefreshTokenAsync(handle1);
+                await _refreshTokens.RemoveRefreshTokenAsync(handle2);
+                await _refreshTokens.RemoveRefreshTokenAsync(handle3);
+            }
+            {
+                var handle1 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client1",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session1"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+                var handle2 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client2",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session1"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+                var handle3 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client3",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session3"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+
+                await _subject.RemoveAllGrantsAsync("123", "client1");
+
+                (await _refreshTokens.GetRefreshTokenAsync(handle1)).Should().BeNull();
+                (await _refreshTokens.GetRefreshTokenAsync(handle2)).Should().NotBeNull();
+                (await _refreshTokens.GetRefreshTokenAsync(handle3)).Should().NotBeNull();
+                await _refreshTokens.RemoveRefreshTokenAsync(handle1);
+                await _refreshTokens.RemoveRefreshTokenAsync(handle2);
+                await _refreshTokens.RemoveRefreshTokenAsync(handle3);
+            }
+            {
+                var handle1 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client1",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session1"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+                var handle2 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client2",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session1"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+                var handle3 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client3",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session1"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+                var handle4 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client1",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session2"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+                await _subject.RemoveAllGrantsAsync("123", "client1", "session1");
+
+                (await _refreshTokens.GetRefreshTokenAsync(handle1)).Should().BeNull();
+                (await _refreshTokens.GetRefreshTokenAsync(handle2)).Should().NotBeNull();
+                (await _refreshTokens.GetRefreshTokenAsync(handle3)).Should().NotBeNull();
+                (await _refreshTokens.GetRefreshTokenAsync(handle4)).Should().NotBeNull();
+                await _refreshTokens.RemoveRefreshTokenAsync(handle1);
+                await _refreshTokens.RemoveRefreshTokenAsync(handle2);
+                await _refreshTokens.RemoveRefreshTokenAsync(handle3);
+                await _refreshTokens.RemoveRefreshTokenAsync(handle4);
+            }
+            {
+                var handle1 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client1",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session1"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+                var handle2 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client2",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session1"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+                var handle3 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client3",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session1"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+                var handle4 = await _refreshTokens.StoreRefreshTokenAsync(new RefreshToken()
+                {
+                    CreationTime = DateTime.UtcNow,
+                    Lifetime = 10,
+                    AccessToken = new Token
+                    {
+                        ClientId = "client1",
+                        Audiences = { "aud" },
+                        CreationTime = DateTime.UtcNow,
+                        Type = "type",
+                        Claims = new List<Claim>
+                        {
+                            new Claim("sub", "123"),
+                            new Claim("sid", "session2"),
+                            new Claim("scope", "baz")
+                        }
+                    },
+                    Version = 1
+                });
+                await _subject.RemoveAllGrantsAsync("123", sessionId:"session1");
+
+                (await _refreshTokens.GetRefreshTokenAsync(handle1)).Should().BeNull();
+                (await _refreshTokens.GetRefreshTokenAsync(handle2)).Should().BeNull();
+                (await _refreshTokens.GetRefreshTokenAsync(handle3)).Should().BeNull();
+                (await _refreshTokens.GetRefreshTokenAsync(handle4)).Should().NotBeNull();
+                await _refreshTokens.RemoveRefreshTokenAsync(handle1);
+                await _refreshTokens.RemoveRefreshTokenAsync(handle2);
+                await _refreshTokens.RemoveRefreshTokenAsync(handle3);
+                await _refreshTokens.RemoveRefreshTokenAsync(handle4);
+            }
         }
 
         [Fact]

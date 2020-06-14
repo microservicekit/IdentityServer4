@@ -4,7 +4,6 @@
 
 using System;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using FluentAssertions;
 using IdentityServer4.EntityFramework.DbContexts;
@@ -77,7 +76,7 @@ namespace IdentityServer4.EntityFramework.IntegrationTests.Stores
                 AllowedCorsOrigins = {"https://localhost"},
                 AllowedGrantTypes = GrantTypes.HybridAndClientCredentials,
                 AllowedScopes = {"openid", "profile", "api1"},
-                Claims = {new Claim("test", "value")},
+                Claims = {new ClientClaim("test", "value")},
                 ClientSecrets = {new Secret("secret".Sha256())},
                 IdentityProviderRestrictions = {"AD"},
                 PostLogoutRedirectUris = {"https://locahost/signout-callback"},

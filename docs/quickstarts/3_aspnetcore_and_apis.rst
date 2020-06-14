@@ -12,7 +12,7 @@ the identity token containing the information about the authentication and sessi
 Modifying the client configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Updating the client configuration in IdentityServer is straightforward - we simply need to add the ``api1`` resource to the allowed scopes list.
-In addition we enable support for refresh tokens via the ``EnableOfflineAccess`` property::
+In addition we enable support for refresh tokens via the ``AllowOfflineAccess`` property::
 
     new Client
     {
@@ -51,7 +51,7 @@ All that's left to do now in the client is to ask for the additional resources v
         .AddCookie("Cookies")
         .AddOpenIdConnect("oidc", options =>
         {
-            options.Authority = "http://localhost:5000";
+            options.Authority = "https://localhost:5001";
             options.RequireHttpsMetadata = false;
 
             options.ClientId = "mvc";
@@ -71,8 +71,8 @@ Using the access token
 ^^^^^^^^^^^^^^^^^^^^^^
 You can access the tokens in the session using the standard ASP.NET Core extension methods that you can find in the ``Microsoft.AspNetCore.Authentication`` namespace::
 
-var accessToken = await HttpContext.GetTokenAsync("access_token")
-var refreshToken = await HttpContext.GetTokenAsync("refresh_token");
+    var accessToken = await HttpContext.GetTokenAsync("access_token");
+    var refreshToken = await HttpContext.GetTokenAsync("refresh_token");
 
 For accessing the API using the access token, all you need to do is retrieve the token, and set it on your HttpClient::
 
@@ -82,7 +82,7 @@ For accessing the API using the access token, all you need to do is retrieve the
 
         var client = new HttpClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-        var content = await client.GetStringAsync("http://localhost:5001/identity");
+        var content = await client.GetStringAsync("https://localhost:6001/identity");
 
         ViewBag.Json = JArray.Parse(content).ToString();
         return View("json");

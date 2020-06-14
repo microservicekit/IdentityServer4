@@ -5,11 +5,11 @@ using IdentityServer4.Models;
 using IdentityServer4.Services;
 using IdentityServer4.Stores;
 using IdentityServer4.Stores.Serialization;
-using IdentityServer4.UnitTests.Common;
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using IdentityServer.UnitTests.Validation.Setup;
 using Xunit;
 
 namespace IdentityServer.UnitTests.Services.Default
@@ -31,8 +31,9 @@ namespace IdentityServer.UnitTests.Services.Default
                 TestLogger.Create<DefaultRefreshTokenStore>());
 
             _subject = new DefaultRefreshTokenService(
-                _clock,
-                _store,
+                _store, 
+                new TestProfileService(),
+                _clock, 
                 TestLogger.Create<DefaultRefreshTokenService>());
         }
 

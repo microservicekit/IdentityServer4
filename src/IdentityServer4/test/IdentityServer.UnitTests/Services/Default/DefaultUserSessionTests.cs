@@ -9,20 +9,19 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using FluentAssertions;
 using IdentityServer.UnitTests.Common;
+using IdentityServer4;
 using IdentityServer4.Configuration;
 using IdentityServer4.Extensions;
 using IdentityServer4.Services;
-using IdentityServer4.UnitTests.Common;
 using Microsoft.AspNetCore.Authentication;
 using Xunit;
 
-namespace IdentityServer4.UnitTests.Services.Default
+namespace IdentityServer.UnitTests.Services.Default
 {
     public class DefaultUserSessionTests
     {
         private DefaultUserSession _subject;
         private MockHttpContextAccessor _mockHttpContext = new MockHttpContextAccessor();
-        private MockAuthenticationSchemeProvider _mockAuthenticationSchemeProvider = new MockAuthenticationSchemeProvider();
         private MockAuthenticationHandlerProvider _mockAuthenticationHandlerProvider = new MockAuthenticationHandlerProvider();
         private MockAuthenticationHandler _mockAuthenticationHandler = new MockAuthenticationHandler();
 
@@ -37,7 +36,6 @@ namespace IdentityServer4.UnitTests.Services.Default
             _user = new IdentityServerUser("123").CreatePrincipal();
             _subject = new DefaultUserSession(
                 _mockHttpContext, 
-                _mockAuthenticationSchemeProvider,
                 _mockAuthenticationHandlerProvider,
                 _options,
                 new StubClock(), 
@@ -49,7 +47,7 @@ namespace IdentityServer4.UnitTests.Services.Default
         {
             await _subject.CreateSessionIdAsync(_user, _props);
 
-            _props.Items[DefaultUserSession.SessionIdKey].Should().NotBeNull();
+            _props.GetSessionId().Should().NotBeNull();
         }
 
         [Fact]
@@ -58,13 +56,13 @@ namespace IdentityServer4.UnitTests.Services.Default
             // this test is needed to allow same session id when cookie is slid
             // IOW, if UI layer passes in same properties dictionary, then we assume it's the same user
 
-            _props.Items.Add(DefaultUserSession.SessionIdKey, "999");
+            _props.SetSessionId("999");
             _mockAuthenticationHandler.Result = AuthenticateResult.Success(new AuthenticationTicket(_user, _props, "scheme"));
 
             await _subject.CreateSessionIdAsync(_user, _props);
 
-            _props.Items[DefaultUserSession.SessionIdKey].Should().NotBeNull();
-            _props.Items[DefaultUserSession.SessionIdKey].Should().Be("999");
+            _props.GetSessionId().Should().NotBeNull();
+            _props.GetSessionId().Should().Be("999");
         }
 
         [Fact]
@@ -72,23 +70,23 @@ namespace IdentityServer4.UnitTests.Services.Default
         {
             _mockAuthenticationHandler.Result = AuthenticateResult.Success(new AuthenticationTicket(_user, _props, "scheme"));
 
-            _props.Items.ContainsKey(DefaultUserSession.SessionIdKey).Should().BeFalse();
+            _props.GetSessionId().Should().BeNull();
 
             await _subject.CreateSessionIdAsync(_user, _props);
 
-            _props.Items.ContainsKey(DefaultUserSession.SessionIdKey).Should().BeTrue();
+            _props.GetSessionId().Should().NotBeNull();
         }
 
         [Fact]
         public async Task CreateSessionId_when_user_is_authenticated_but_different_sub_should_create_new_sid()
         {
-            _props.Items.Add(DefaultUserSession.SessionIdKey, "999");
+            _props.SetSessionId("999");
             _mockAuthenticationHandler.Result = AuthenticateResult.Success(new AuthenticationTicket(_user, _props, "scheme"));
 
             await _subject.CreateSessionIdAsync(new IdentityServerUser("alice").CreatePrincipal(), _props);
 
-            _props.Items[DefaultUserSession.SessionIdKey].Should().NotBeNull();
-            _props.Items[DefaultUserSession.SessionIdKey].Should().NotBe("999");
+            _props.GetSessionId().Should().NotBeNull();
+            _props.GetSessionId().Should().NotBe("999");
         }
 
         [Fact]
@@ -102,13 +100,13 @@ namespace IdentityServer4.UnitTests.Services.Default
             _mockHttpContext.HttpContext.Response.Headers.Clear();
 
             var cookie = cookieContainer.GetCookies(new Uri("http://server")).Cast<Cookie>().Where(x => x.Name == _options.Authentication.CheckSessionCookieName).FirstOrDefault();
-            cookie.Value.Should().Be(_props.Items[DefaultUserSession.SessionIdKey]);
+            cookie.Value.Should().Be(_props.GetSessionId());
         }
 
         [Fact]
         public async Task EnsureSessionIdCookieAsync_should_add_cookie()
         {
-            _props.Items.Add(DefaultUserSession.SessionIdKey, "999");
+            _props.SetSessionId("999");
             _mockAuthenticationHandler.Result = AuthenticateResult.Success(new AuthenticationTicket(_user, _props, "scheme"));
 
             await _subject.EnsureSessionIdCookieAsync();
@@ -139,7 +137,7 @@ namespace IdentityServer4.UnitTests.Services.Default
         [Fact]
         public async Task RemoveSessionIdCookie_should_remove_cookie()
         {
-            _props.Items.Add(DefaultUserSession.SessionIdKey, "999");
+            _props.SetSessionId("999");
             _mockAuthenticationHandler.Result = AuthenticateResult.Success(new AuthenticationTicket(_user, _props, "scheme"));
 
             await _subject.EnsureSessionIdCookieAsync();
@@ -164,7 +162,7 @@ namespace IdentityServer4.UnitTests.Services.Default
         [Fact]
         public async Task GetCurrentSessionIdAsync_when_user_is_authenticated_should_return_sid()
         {
-            _props.Items.Add(DefaultUserSession.SessionIdKey, "999");
+            _props.SetSessionId("999");
             _mockAuthenticationHandler.Result = AuthenticateResult.Success(new AuthenticationTicket(_user, _props, "scheme"));
 
             var sid = await _subject.GetSessionIdAsync();

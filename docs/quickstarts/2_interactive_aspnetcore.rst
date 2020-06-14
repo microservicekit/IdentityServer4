@@ -41,6 +41,13 @@ Creating an MVC client
 ^^^^^^^^^^^^^^^^^^^^^^
 Next you will create an MVC application.
 Use the ASP.NET Core "Web Application" (i.e. MVC) template for that. 
+
+run from the src folder::
+
+    dotnet new mvc -n MVCClient
+    cd ..
+    dotnet sln add .\src\MVCClient\MVCClient.csproj
+
 Once you've created the project, configure the application to run on port 5002.
 
 To add support for OpenID Connect authentication to the MVC application, you first need to add the nuget package containing the OpenID Connect handler to your project, e.g.::
@@ -49,6 +56,10 @@ To add support for OpenID Connect authentication to the MVC application, you fir
 
 ..then add the following to ``ConfigureServices`` in ``Startup``::
 
+    using System.IdentityModel.Tokens.Jwt;
+    
+    // ...
+    
     JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
     services.AddAuthentication(options =>
@@ -59,7 +70,7 @@ To add support for OpenID Connect authentication to the MVC application, you fir
         .AddCookie("Cookies")
         .AddOpenIdConnect("oidc", options =>
         {
-            options.Authority = "http://localhost:5000";
+            options.Authority = "https://localhost:5001";
             options.RequireHttpsMetadata = false;
 
             options.ClientId = "mvc";
@@ -275,7 +286,7 @@ Adding Google support
 To be able to use Google for authentication, you first need to register with them.
 This is done at their developer `console <https://console.developers.google.com/>`_.
 Create a new project, enable the Google+ API and configure the callback address of your
-local IdentityServer by adding the */signin-google* path to your base-address (e.g. http://localhost:5000/signin-google).
+local IdentityServer by adding the */signin-google* path to your base-address (e.g. https://localhost:5001/signin-google).
 
 The developer console will show you a client ID and secret issued by Google - you will need that in the next step.
 

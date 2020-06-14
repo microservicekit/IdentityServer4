@@ -30,6 +30,7 @@ namespace IdentityServer4.Hosting
         private readonly IAuthenticationSchemeProvider _schemes;
         private readonly ISystemClock _clock;
         private readonly IUserSession _session;
+        private readonly IBackChannelLogoutService _backChannelLogoutService;
         private readonly IdentityServerOptions _options;
         private readonly ILogger<IdentityServerAuthenticationService> _logger;
 
@@ -38,6 +39,7 @@ namespace IdentityServer4.Hosting
             IAuthenticationSchemeProvider schemes,
             ISystemClock clock,
             IUserSession session,
+            IBackChannelLogoutService backChannelLogoutService,
             IdentityServerOptions options,
             ILogger<IdentityServerAuthenticationService> logger)
         {
@@ -46,36 +48,21 @@ namespace IdentityServer4.Hosting
             _schemes = schemes;
             _clock = clock;
             _session = session;
+            _backChannelLogoutService = backChannelLogoutService;
             _options = options;
             _logger = logger;
-        }
-
-        // todo: remove this in 3.0 and use extension method on http context
-        private async Task<string> GetCookieAuthenticationSchemeAsync()
-        {
-            if (_options.Authentication.CookieAuthenticationScheme != null)
-            {
-                return _options.Authentication.CookieAuthenticationScheme;
-            }
-
-            var scheme = await _schemes.GetDefaultAuthenticateSchemeAsync();
-            if (scheme == null)
-            {
-                throw new InvalidOperationException("No DefaultAuthenticateScheme found.");
-            }
-            return scheme.Name;
         }
 
         public async Task SignInAsync(HttpContext context, string scheme, ClaimsPrincipal principal, AuthenticationProperties properties)
         {
             var defaultScheme = await _schemes.GetDefaultSignInSchemeAsync();
-            var cookieScheme = await GetCookieAuthenticationSchemeAsync();
+            var cookieScheme = await context.GetCookieAuthenticationSchemeAsync();
 
             if ((scheme == null && defaultScheme?.Name == cookieScheme) || scheme == cookieScheme)
             {
                 AugmentPrincipal(principal);
 
-                if (properties == null) properties = new AuthenticationProperties();
+                properties ??= new AuthenticationProperties();
                 await _session.CreateSessionIdAsync(principal, properties);
             }
 
@@ -93,12 +80,19 @@ namespace IdentityServer4.Hosting
         public async Task SignOutAsync(HttpContext context, string scheme, AuthenticationProperties properties)
         {
             var defaultScheme = await _schemes.GetDefaultSignOutSchemeAsync();
-            var cookieScheme = await GetCookieAuthenticationSchemeAsync();
+            var cookieScheme = await context.GetCookieAuthenticationSchemeAsync();
 
             if ((scheme == null && defaultScheme?.Name == cookieScheme) || scheme == cookieScheme)
             {
                 // this sets a flag used by the FederatedSignoutAuthenticationHandlerProvider
                 context.SetSignOutCalled();
+                
+                // back channel logout
+                var logoutContext = await _session.GetLogoutNotificationContext();
+                if (logoutContext != null)
+                {
+                    await _backChannelLogoutService.SendLogoutNotificationsAsync(logoutContext);
+                }
                 
                 // this clears our session id cookie so JS clients can detect the user has signed out
                 await _session.RemoveSessionIdCookieAsync();

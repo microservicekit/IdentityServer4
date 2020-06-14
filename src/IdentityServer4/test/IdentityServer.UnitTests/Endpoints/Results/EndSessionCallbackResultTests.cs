@@ -2,27 +2,26 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
 
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
+using IdentityServer.UnitTests.Common;
 using IdentityServer4.Configuration;
 using IdentityServer4.Endpoints.Results;
 using IdentityServer4.Extensions;
 using IdentityServer4.Models;
-using IdentityServer4.UnitTests.Common;
 using IdentityServer4.Validation;
 using Microsoft.AspNetCore.Http;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 
-namespace IdentityServer4.UnitTests.Endpoints.Results
+namespace IdentityServer.UnitTests.Endpoints.Results
 {
     public class EndSessionCallbackResultTests
     {
         private EndSessionCallbackResult _subject;
 
         private EndSessionCallbackValidationResult _result = new EndSessionCallbackValidationResult();
-        private MockUserSession _mockUserSession = new MockUserSession();
         private IdentityServerOptions _options = TestIdentityServerOptions.Create();
 
         private DefaultHttpContext _context = new DefaultHttpContext();
