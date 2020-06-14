@@ -7,7 +7,7 @@ using IdentityServer4.Validation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace IdentityServer4.IntegrationTests.Clients
+namespace IdentityServer.IntegrationTests.Clients.Setup
 {
     public class Startup
     {
@@ -32,7 +32,8 @@ namespace IdentityServer4.IntegrationTests.Clients
 
             builder.AddInMemoryClients(Clients.Get());
             builder.AddInMemoryIdentityResources(Scopes.GetIdentityScopes());
-            builder.AddInMemoryApiResources(Scopes.GetApiScopes());
+            builder.AddInMemoryApiResources(Scopes.GetApiResources());
+            builder.AddInMemoryApiScopes(Scopes.GetApiScopes());
             builder.AddTestUsers(Users.Get());
 
             builder.AddDeveloperSigningCredential(persistKey: false);
@@ -42,8 +43,9 @@ namespace IdentityServer4.IntegrationTests.Clients
             builder.AddExtensionGrantValidator<NoSubjectExtensionGrantValidator>();
             builder.AddExtensionGrantValidator<DynamicParameterExtensionGrantValidator>();
 
-            builder.AddSecretParser<JwtBearerClientAssertionSecretParser>();
-            builder.AddSecretValidator<PrivateKeyJwtSecretValidator>();
+            builder.AddProfileService<CustomProfileService>();
+
+            builder.AddJwtBearerClientAuthentication();
             builder.AddSecretValidator<ConfirmationSecretValidator>();
 
             // add a custom token request validator if set
@@ -56,7 +58,6 @@ namespace IdentityServer4.IntegrationTests.Clients
         public void Configure(IApplicationBuilder app)
         {
             app.UseIdentityServer();
-            app.UseAuthentication();
         }
     }
 }

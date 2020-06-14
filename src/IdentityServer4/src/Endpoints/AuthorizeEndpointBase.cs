@@ -130,7 +130,8 @@ namespace IdentityServer4.Endpoints
             {
                 Request = request,
                 Error = error,
-                ErrorDescription = errorDescription
+                ErrorDescription = errorDescription,
+                SessionState = request?.GenerateSessionStateValue()
             });
         }
 
@@ -177,10 +178,8 @@ namespace IdentityServer4.Endpoints
                 LogTokens(response);
                 return _events.RaiseAsync(new TokenIssuedSuccessEvent(response));
             }
-            else
-            {
-                return RaiseFailureEventAsync(response.Request, response.Error, response.ErrorDescription);
-            }
+
+            return RaiseFailureEventAsync(response.Request, response.Error, response.ErrorDescription);
         }
     }
 }

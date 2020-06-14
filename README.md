@@ -18,6 +18,7 @@ Active development happens on the master branch. This always contains the latest
 IdentityServer is built against the latest ASP.NET Core 3.
 
 * [Install](https://www.microsoft.com/net/download/core#/current) the [required](https://github.com/IdentityServer/IdentityServer4/blob/master/global.json) .NET Core SDK
+* Install Git
 * Run `build.ps1` or `build.sh` in the root of the repo
 
 ## Documentation
@@ -42,18 +43,17 @@ This will help us devote more time to answering questions and doing feature deve
 [<img src="https://user-images.githubusercontent.com/1454075/66454740-fb973580-ea68-11e9-9993-6c1014881528.png" width="200">](https://github.com/dotnet-at-microsoft)
 
 ### Corporate Sponsors
-
-[Thinktecture AG](https://www.thinktecture.com)  
 [Ritter Insurance Marketing](https://www.ritterim.com)  
 [Intuit](https://www.intuit.com)  
 [ExtraNetUserManager](https://www.extranetusermanager.com/)  
+[Knab](https://www.knab.nl/)
 
 You can see a list of our current sponsors [here](https://github.com/IdentityServer/IdentityServer4/blob/master/SPONSORS.md) - and for companies we have some nice advertisement options as well.
 
 ## Acknowledgements
 IdentityServer4 is built using the following great open source projects and free services:
 
-* [ASP.NET Core](https://github.com/aspnet)
+* [ASP.NET Core](https://github.com/dotnet/aspnetcore)
 * [Bullseye](https://github.com/adamralph/bullseye)
 * [SimpleExec](https://github.com/adamralph/simple-exec)
 * [MinVer](https://github.com/adamralph/minver)

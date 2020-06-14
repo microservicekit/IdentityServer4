@@ -2,20 +2,20 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
 
-using FluentAssertions;
-using IdentityModel;
-using IdentityServer4.Configuration;
-using IdentityServer4.Models;
-using IdentityServer4.Stores;
-using IdentityServer4.UnitTests.Common;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
-using Xunit;
+using FluentAssertions;
+using IdentityModel;
 using IdentityServer.UnitTests.Common;
+using IdentityServer.UnitTests.Validation.Setup;
+using IdentityServer4.Configuration;
+using IdentityServer4.Models;
+using IdentityServer4.Stores;
+using Xunit;
 
-namespace IdentityServer4.UnitTests.Validation
+namespace IdentityServer.UnitTests.Validation
 {
     public class AccessTokenValidation
     {
@@ -168,7 +168,33 @@ namespace IdentityServer4.UnitTests.Validation
 
             result.IsError.Should().BeFalse();
         }
+        
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        [Trait("Category", Category)]
+        public async Task JWT_Token_with_scopes_have_expected_claims(bool flag)
+        {
+            var options = TestIdentityServerOptions.Create();
+            options.EmitScopesAsSpaceDelimitedStringInJwt = flag;
+            
+            var signer = Factory.CreateDefaultTokenCreator(options);
+            var jwt = await signer.CreateTokenAsync(TokenFactory.CreateAccessToken(new Client { ClientId = "roclient" }, "valid", 600, "read", "write"));
 
+            var validator = Factory.CreateTokenValidator(null);
+            var result = await validator.ValidateAccessTokenAsync(jwt);
+
+            result.IsError.Should().BeFalse();
+            result.Jwt.Should().NotBeNullOrEmpty();
+            result.Client.ClientId.Should().Be("roclient");
+
+            result.Claims.Count().Should().Be(8);
+            var scopes = result.Claims.Where(c => c.Type == "scope").Select(c => c.Value).ToArray();
+            scopes.Count().Should().Be(2);
+            scopes[0].Should().Be("read");
+            scopes[1].Should().Be("write");
+        }
+        
         [Fact]
         [Trait("Category", Category)]
         public async Task JWT_Token_invalid_Issuer()

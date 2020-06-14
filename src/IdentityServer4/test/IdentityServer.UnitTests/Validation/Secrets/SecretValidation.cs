@@ -2,17 +2,19 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
 
+using System.Threading.Tasks;
 using FluentAssertions;
+using IdentityServer.UnitTests.Common;
+using IdentityServer.UnitTests.Validation.Setup;
+using IdentityServer4;
+using IdentityServer4.Configuration;
 using IdentityServer4.Models;
 using IdentityServer4.Stores;
 using IdentityServer4.Validation;
 using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
 using Xunit;
-using IdentityServer4.Configuration;
-using IdentityServer.UnitTests.Common;
 
-namespace IdentityServer4.UnitTests.Validation.Secrets
+namespace IdentityServer.UnitTests.Validation.Secrets
 {
     public class SecretValidation
     {
@@ -45,7 +47,7 @@ namespace IdentityServer4.UnitTests.Validation.Secrets
                 Type = IdentityServerConstants.ParsedSecretTypes.SharedSecret
             };
 
-            var result = await _validator.ValidateAsync(secret, client.ClientSecrets);
+            var result = await _validator.ValidateAsync(client.ClientSecrets, secret);
 
             result.Success.Should().BeTrue();
         }
@@ -64,7 +66,7 @@ namespace IdentityServer4.UnitTests.Validation.Secrets
                 Type = "invalid"
             };
 
-            var result = await _validator.ValidateAsync(secret, client.ClientSecrets);
+            var result = await _validator.ValidateAsync(client.ClientSecrets, secret);
 
             result.Success.Should().BeFalse();
         }
@@ -83,19 +85,19 @@ namespace IdentityServer4.UnitTests.Validation.Secrets
                 Type = IdentityServerConstants.ParsedSecretTypes.SharedSecret
             };
 
-            var result = await _validator.ValidateAsync(secret, client.ClientSecrets);
+            var result = await _validator.ValidateAsync(client.ClientSecrets, secret);
             result.Success.Should().BeTrue();
 
             secret.Credential = "foobar";
-            result = await _validator.ValidateAsync(secret, client.ClientSecrets);
+            result = await _validator.ValidateAsync(client.ClientSecrets, secret);
             result.Success.Should().BeTrue();
 
             secret.Credential = "quux";
-            result = await _validator.ValidateAsync(secret, client.ClientSecrets);
+            result = await _validator.ValidateAsync(client.ClientSecrets, secret);
             result.Success.Should().BeTrue();
 
             secret.Credential = "notexpired";
-            result = await _validator.ValidateAsync(secret, client.ClientSecrets);
+            result = await _validator.ValidateAsync(client.ClientSecrets, secret);
             result.Success.Should().BeTrue();
         }
 
@@ -113,7 +115,7 @@ namespace IdentityServer4.UnitTests.Validation.Secrets
                 Type = IdentityServerConstants.ParsedSecretTypes.SharedSecret
             };
 
-            var result = await _validator.ValidateAsync(secret, client.ClientSecrets);
+            var result = await _validator.ValidateAsync(client.ClientSecrets, secret);
 
             result.Success.Should().BeFalse();
         }
@@ -132,7 +134,7 @@ namespace IdentityServer4.UnitTests.Validation.Secrets
                 Type = IdentityServerConstants.ParsedSecretTypes.SharedSecret
             };
 
-            var result = await _validator.ValidateAsync(secret, client.ClientSecrets);
+            var result = await _validator.ValidateAsync(client.ClientSecrets, secret);
             result.Success.Should().BeFalse();
         }
 
@@ -150,7 +152,7 @@ namespace IdentityServer4.UnitTests.Validation.Secrets
                 Type = IdentityServerConstants.ParsedSecretTypes.SharedSecret
             };
 
-            var result = await _validator.ValidateAsync(secret, client.ClientSecrets);
+            var result = await _validator.ValidateAsync(client.ClientSecrets, secret);
             result.Success.Should().BeFalse();
         }
 
@@ -167,7 +169,7 @@ namespace IdentityServer4.UnitTests.Validation.Secrets
                 Type = IdentityServerConstants.ParsedSecretTypes.SharedSecret
             };
             
-            var result = await _validator.ValidateAsync(secret, client.ClientSecrets);
+            var result = await _validator.ValidateAsync(client.ClientSecrets, secret);
             result.Success.Should().BeFalse();
         }
     }

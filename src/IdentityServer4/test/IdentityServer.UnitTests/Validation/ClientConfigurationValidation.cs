@@ -5,10 +5,10 @@
 using FluentAssertions;
 using IdentityServer4.Configuration;
 using IdentityServer4.Models;
-using IdentityServer4.UnitTests.Validation;
 using IdentityServer4.Validation;
 using System;
 using System.Threading.Tasks;
+using IdentityServer.UnitTests.Validation.Setup;
 using Xunit;
 
 namespace IdentityServer.UnitTests.Validation
@@ -245,13 +245,60 @@ namespace IdentityServer.UnitTests.Validation
                 ClientSecrets = { new Secret("hash") },
                 AllowedScopes = { "foo" },
                 RedirectUris = null,
-                PostLogoutRedirectUris = null
             };
 
             var context = await ValidateAsync(client);
             context.IsValid.Should().BeTrue();
         }
 
+        [Fact]
+        [Trait("Category", Category)]
+        public async Task null_post_logout_redirect_uris_collection_should_succeed()
+        {
+            var client = new Client
+            {
+                ClientId = "id",
+                AllowedGrantTypes = GrantTypes.ClientCredentials,
+                ClientSecrets = { new Secret("hash") },
+                AllowedScopes = { "foo" },
+                PostLogoutRedirectUris = null
+            };
+
+            var context = await ValidateAsync(client);
+            context.IsValid.Should().BeTrue();
+        }
+        [Fact]
+        [Trait("Category", Category)]
+        public async Task null_redirect_uris_should_succeed()
+        {
+            var client = new Client
+            {
+                ClientId = "id",
+                AllowedGrantTypes = GrantTypes.ClientCredentials,
+                ClientSecrets = { new Secret("hash") },
+                AllowedScopes = { "foo" },
+                RedirectUris = { null }
+            };
+
+            var context = await ValidateAsync(client);
+            context.IsValid.Should().BeTrue();
+        }
+        [Fact]
+        [Trait("Category", Category)]
+        public async Task null_post_logout_redirect_uris_should_succeed()
+        {
+            var client = new Client
+            {
+                ClientId = "id",
+                AllowedGrantTypes = GrantTypes.ClientCredentials,
+                ClientSecrets = { new Secret("hash") },
+                AllowedScopes = { "foo" },
+                PostLogoutRedirectUris = { null }
+            };
+
+            var context = await ValidateAsync(client);
+            context.IsValid.Should().BeTrue();
+        }
         [Fact]
         [Trait("Category", Category)]
         public async Task empty_redirect_uris_collection_should_succeed()
@@ -263,7 +310,22 @@ namespace IdentityServer.UnitTests.Validation
                 ClientSecrets = { new Secret("hash") },
                 AllowedScopes = { "foo" },
                 RedirectUris = { },
-                PostLogoutRedirectUris = { }
+            };
+
+            var context = await ValidateAsync(client);
+            context.IsValid.Should().BeTrue();
+        }
+        [Fact]
+        [Trait("Category", Category)]
+        public async Task empty_post_logout_redirect_uris_collection_should_succeed()
+        {
+            var client = new Client
+            {
+                ClientId = "id",
+                AllowedGrantTypes = GrantTypes.ClientCredentials,
+                ClientSecrets = { new Secret("hash") },
+                AllowedScopes = { "foo" },
+                PostLogoutRedirectUris = { },
             };
 
             var context = await ValidateAsync(client);
@@ -364,6 +426,10 @@ namespace IdentityServer.UnitTests.Validation
         [InlineData("http://foo/path")]
         [InlineData("http://foo:123/path")]
         [InlineData("https://foo:443/path")]
+        [InlineData("custom://foo/")]
+        [InlineData("custom://foo/path")]
+        [InlineData("custom://foo:443/")]
+        [InlineData("custom://foo:443/path")]
         [InlineData("")]
         [InlineData("   ")]
         [InlineData((string)null)]
@@ -398,6 +464,8 @@ namespace IdentityServer.UnitTests.Validation
         [InlineData("http://foo:123")]
         [InlineData("https://foo:456")]
         [InlineData("https://foo:443")]
+        [InlineData("custom://foo")]
+        [InlineData("custom://foo:443")]
         public async Task ValidateAllowedCorsOriginsAsync_should_allow_valid_formats(string origin)
         {
             var client = new Client

@@ -2,14 +2,16 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
 
-using FluentAssertions;
-using IdentityModel;
 using System;
 using System.Collections.Specialized;
 using System.Threading.Tasks;
+using FluentAssertions;
+using IdentityModel;
+using IdentityServer.UnitTests.Validation.Setup;
+using IdentityServer4;
 using Xunit;
 
-namespace IdentityServer4.UnitTests.Validation.AuthorizeRequest
+namespace IdentityServer.UnitTests.Validation.AuthorizeRequest_Validation
 {
     public class Authorize_ProtocolValidation_Invalid
     {
@@ -237,7 +239,7 @@ namespace IdentityServer4.UnitTests.Validation.AuthorizeRequest
             var result = await validator.ValidateAsync(parameters);
 
             result.IsError.Should().BeTrue();
-            result.Error.Should().Be(OidcConstants.AuthorizeErrors.UnsupportedResponseType);
+            result.Error.Should().Be(OidcConstants.AuthorizeErrors.InvalidRequest);
         }
 
         [Fact]
@@ -255,7 +257,7 @@ namespace IdentityServer4.UnitTests.Validation.AuthorizeRequest
             var result = await validator.ValidateAsync(parameters);
 
             result.IsError.Should().BeTrue();
-            result.Error.Should().Be(OidcConstants.AuthorizeErrors.UnsupportedResponseType);
+            result.Error.Should().Be(OidcConstants.AuthorizeErrors.InvalidRequest);
         }
 
         [Fact]
@@ -273,7 +275,7 @@ namespace IdentityServer4.UnitTests.Validation.AuthorizeRequest
             var result = await validator.ValidateAsync(parameters);
 
             result.IsError.Should().BeTrue();
-            result.Error.Should().Be(OidcConstants.AuthorizeErrors.UnsupportedResponseType);
+            result.Error.Should().Be(OidcConstants.AuthorizeErrors.InvalidRequest);
         }
 
         [Fact]
@@ -291,7 +293,7 @@ namespace IdentityServer4.UnitTests.Validation.AuthorizeRequest
             var result = await validator.ValidateAsync(parameters);
 
             result.IsError.Should().BeTrue();
-            result.Error.Should().Be(OidcConstants.AuthorizeErrors.UnsupportedResponseType);
+            result.Error.Should().Be(OidcConstants.AuthorizeErrors.InvalidRequest);
         }
 
         [Fact]
@@ -309,7 +311,7 @@ namespace IdentityServer4.UnitTests.Validation.AuthorizeRequest
             var result = await validator.ValidateAsync(parameters);
 
             result.IsError.Should().BeTrue();
-            result.Error.Should().Be(OidcConstants.AuthorizeErrors.UnsupportedResponseType);
+            result.Error.Should().Be(OidcConstants.AuthorizeErrors.InvalidRequest);
         }
 
         [Fact]
@@ -363,7 +365,7 @@ namespace IdentityServer4.UnitTests.Validation.AuthorizeRequest
             var result = await validator.ValidateAsync(parameters);
 
             result.IsError.Should().BeTrue();
-            result.Error.Should().Be(OidcConstants.AuthorizeErrors.UnsupportedResponseType);
+            result.Error.Should().Be(OidcConstants.AuthorizeErrors.InvalidRequest);
         }
 
         [Fact]
@@ -381,7 +383,26 @@ namespace IdentityServer4.UnitTests.Validation.AuthorizeRequest
             var result = await validator.ValidateAsync(parameters);
 
             result.IsError.Should().BeTrue();
-            result.Error.Should().Be(OidcConstants.AuthorizeErrors.UnsupportedResponseType);
+            result.Error.Should().Be(OidcConstants.AuthorizeErrors.InvalidRequest);
+        }
+
+        [Fact]
+        [Trait("Category", Category)]
+        public async Task prompt_none_and_other_values_should_fail()
+        {
+            var parameters = new NameValueCollection();
+            parameters.Add(OidcConstants.AuthorizeRequest.ClientId, "codeclient");
+            parameters.Add(OidcConstants.AuthorizeRequest.Scope, "openid");
+            parameters.Add(OidcConstants.AuthorizeRequest.RedirectUri, "https://server/cb");
+            parameters.Add(OidcConstants.AuthorizeRequest.ResponseType, OidcConstants.ResponseTypes.Code);
+            parameters.Add(OidcConstants.AuthorizeRequest.ResponseMode, OidcConstants.ResponseModes.Fragment);
+            parameters.Add(OidcConstants.AuthorizeRequest.Prompt, "none login");
+
+            var validator = Factory.CreateAuthorizeRequestValidator();
+            var result = await validator.ValidateAsync(parameters);
+
+            result.IsError.Should().BeTrue();
+            result.Error.Should().Be(OidcConstants.AuthorizeErrors.InvalidRequest);
         }
     }
 }

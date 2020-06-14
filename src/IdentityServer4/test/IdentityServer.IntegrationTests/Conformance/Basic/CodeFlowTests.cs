@@ -2,12 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
 
-using FluentAssertions;
-using IdentityModel.Client;
-using IdentityServer4.Configuration;
-using IdentityServer4.IntegrationTests.Common;
-using IdentityServer4.Models;
-using IdentityServer4.Test;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -15,10 +9,15 @@ using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using FluentAssertions;
+using IdentityModel.Client;
+using IdentityServer.IntegrationTests.Common;
+using IdentityServer4.Configuration;
+using IdentityServer4.Models;
+using IdentityServer4.Test;
 using Xunit;
 
-
-namespace IdentityServer4.IntegrationTests.Conformance.Basic
+namespace IdentityServer.IntegrationTests.Conformance.Basic
 {
     public class CodeFlowTests 
     {
@@ -42,6 +41,7 @@ namespace IdentityServer4.IntegrationTests.Conformance.Basic
                 AllowedScopes = { "openid" },
 
                 RequireConsent = false,
+                RequirePkce = false,
                 RedirectUris = new List<string>
                 {
                     "https://code_pipeline.Client/callback",
@@ -107,15 +107,14 @@ namespace IdentityServer4.IntegrationTests.Conformance.Basic
             tokenResult.IdentityToken.Should().NotBeNull();
 
             var token = new JwtSecurityToken(tokenResult.IdentityToken);
-
-            token.Claims.Count().Should().Be(12);
+            
             var s_hash = token.Claims.FirstOrDefault(c => c.Type == "s_hash");
             s_hash.Should().BeNull();
         }
 
         [Fact]
         [Trait("Category", Category)]
-        public async Task State_should_not_result_in_shash()
+        public async Task State_should_result_in_shash()
         {
             await _pipeline.LoginAsync("bob");
 
@@ -157,8 +156,7 @@ namespace IdentityServer4.IntegrationTests.Conformance.Basic
             tokenResult.IdentityToken.Should().NotBeNull();
 
             var token = new JwtSecurityToken(tokenResult.IdentityToken);
-
-            token.Claims.Count().Should().Be(13);
+            
             var s_hash = token.Claims.FirstOrDefault(c => c.Type == "s_hash");
             s_hash.Should().NotBeNull();
             s_hash.Value.Should().Be(CryptoHelper.CreateHashClaimValue("state", "RS256"));

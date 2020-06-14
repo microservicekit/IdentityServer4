@@ -2,22 +2,23 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
 
-using FluentAssertions;
-using IdentityModel;
-using IdentityModel.Client;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using FluentAssertions;
+using IdentityModel;
+using IdentityModel.Client;
+using IdentityServer.IntegrationTests.Clients.Setup;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
-namespace IdentityServer4.IntegrationTests.Clients
+namespace IdentityServer.IntegrationTests.Clients
 {
     public class ResourceOwnerClient
     {
@@ -56,12 +57,14 @@ namespace IdentityServer4.IntegrationTests.Clients
 
             var payload = GetPayload(response);
 
-            payload.Count().Should().Be(10);
+            payload.Count().Should().Be(12);
             payload.Should().Contain("iss", "https://idsvr4");
             payload.Should().Contain("client_id", "roclient");
             payload.Should().Contain("sub", "88421113");
             payload.Should().Contain("idp", "local");
-
+            payload.Keys.Should().Contain("jti");
+            payload.Keys.Should().Contain("iat");
+            
             payload["aud"].Should().Be("api");
 
             var scopes = ((JArray)payload["scope"]).Select(x => x.ToString());
@@ -93,8 +96,7 @@ namespace IdentityServer4.IntegrationTests.Clients
             response.RefreshToken.Should().NotBeNull();
 
             var payload = GetPayload(response);
-
-            payload.Count().Should().Be(11);
+            
             payload.Should().Contain("iss", "https://idsvr4");
             payload.Should().Contain("client_id", "roclient");
             payload.Should().Contain("sub", "88421113");
@@ -143,11 +145,13 @@ namespace IdentityServer4.IntegrationTests.Clients
 
             var payload = GetPayload(response);
 
-            payload.Count().Should().Be(10);
+            payload.Count().Should().Be(12);
             payload.Should().Contain("iss", "https://idsvr4");
             payload.Should().Contain("client_id", "roclient");
             payload.Should().Contain("sub", "88421113");
             payload.Should().Contain("idp", "local");
+            payload.Keys.Should().Contain("jti");
+            payload.Keys.Should().Contain("iat");
 
             payload["aud"].Should().Be("api");
 
@@ -184,11 +188,13 @@ namespace IdentityServer4.IntegrationTests.Clients
 
             var payload = GetPayload(response);
 
-            payload.Count().Should().Be(10);
+            payload.Count().Should().Be(12);
             payload.Should().Contain("iss", "https://idsvr4");
             payload.Should().Contain("client_id", "roclient");
             payload.Should().Contain("sub", "88421113");
             payload.Should().Contain("idp", "local");
+            payload.Keys.Should().Contain("jti");
+            payload.Keys.Should().Contain("iat");
 
             payload["aud"].Should().Be("api");
 
@@ -223,9 +229,27 @@ namespace IdentityServer4.IntegrationTests.Clients
             response.HttpStatusCode.Should().Be(HttpStatusCode.BadRequest);
             response.Error.Should().Be("invalid_grant");
         }
-
+        
         [Fact]
-        public async Task User_with_invalid_password_should_fail()
+        public async Task User_with_empty_password_should_succeed()
+        {
+            var response = await _client.RequestPasswordTokenAsync(new PasswordTokenRequest
+            {
+                Address = TokenEndpoint,
+                ClientId = "roclient",
+                ClientSecret = "secret",
+
+                Scope = "api1",
+                UserName = "bob_no_password"
+            });
+
+            response.IsError.Should().Be(false);
+        }
+
+        [Theory]
+        [InlineData("invalid")]
+        [InlineData("")]
+        public async Task User_with_invalid_password_should_fail(string password)
         {
             var response = await _client.RequestPasswordTokenAsync(new PasswordTokenRequest
             {
@@ -235,7 +259,7 @@ namespace IdentityServer4.IntegrationTests.Clients
 
                 Scope = "api1",
                 UserName = "bob",
-                Password = "invalid"
+                Password = password
             });
 
             response.IsError.Should().Be(true);
@@ -245,7 +269,7 @@ namespace IdentityServer4.IntegrationTests.Clients
         }
 
 
-        private Dictionary<string, object> GetPayload(IdentityModel.Client.TokenResponse response)
+        private static Dictionary<string, object> GetPayload(IdentityModel.Client.TokenResponse response)
         {
             var token = response.AccessToken.Split('.').Skip(1).Take(1).First();
             var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(
